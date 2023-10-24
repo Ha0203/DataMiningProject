@@ -54,5 +54,4 @@ new_df = impute(df, columns, method)
 
 write_data(new_df, output_file)
 
-fillna(pd.read_csv(input_file), method, 'resultPanda.csv')
 

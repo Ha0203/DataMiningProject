@@ -1,16 +1,74 @@
 import sys
-import pandas as pd
-import numpy as np
+import pandas as pd # used for testing 
+import numpy as np # used for testing
 import argparse
+import csv
+
 
 NUMERICS = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 
+def column_with_all_missing_values(df, name):
+  if type(df[name][0]) == str:
+    for value in df[name]:
+      if value != '':
+        return False
+  else:
+     for value in df[name]:
+      if value != None:
+        return False
+  return True
+
+def is_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
+    
 def get_data(url):
   """
-  get data from file
+  get data from file 
   """
-  df = pd.read_csv(url)
-  return df
+  file = open(url, 'r')
+
+  cols = {}
+
+  first_line_vals = file.readline().rstrip().split(',')
+
+  for val in first_line_vals:
+    cols[val] = [] 
+
+  for line in file:
+    line_vals = line.rstrip().split(',')
+    
+    for i in range(len(line_vals)):
+      cols[first_line_vals[i]].append(line_vals[i])
+
+  file.close()
+  
+  return cols
+
+def write_data(df, url):
+  """
+  Write data to csv
+  """
+  
+  with open(url, 'w', newline='') as file:
+    csvwriter = csv.writer(file)
+
+    csvwriter.writerow(get_column_names(df))
+    
+    rows = []
+    for col_name, col_data in df.items():
+      new_row = []
+      for value in col_data:
+        new_row.append(value)
+      
+      rows.append(new_row)
+
+    rows = list(map(list, zip(*rows)))
+
+    csvwriter.writerows(rows)
 
 def isNaN(value):
   """
@@ -20,27 +78,57 @@ def isNaN(value):
 
 def get_shape(df):
   """
-  return the shape of df(rows, columns)
+  return the shape of df(columns, rows)
   """
-  return len(df), len(df.iloc[0])
+  return len(df), len(df['Id'])
 
 def get_column_names(df):
   return list(df.keys())
 
 def get_all_column_types(df):
-  n, m = get_shape(df)
-  return [df.iloc[:,i].dtype for i in range(0, m)]
+  for key, value in df.items():
+    print(f'{key} {type(value[0])}')
 
-def get_column_type(df, i):
-  return df.iloc[:,i].dtype
+def convert_column_types(df):
+  new_df = {}
 
-def get_mode_of_a_column(df, i):
+  for col_name, col_data in df.items():
+    for value in col_data:
+      if isNaN(value):
+        continue 
+
+      if value.isdigit():
+        new_col = []
+
+        for value in col_data:
+          new_col.append(int(value))
+          
+        new_df[col_name] = new_col
+        break
+      elif is_float(value):
+          new_col = []
+
+          for value in col_data:
+            if value == '':
+              new_col.append(None)
+            else:
+              new_col.append(float(value))
+
+          new_df[col_name] = new_col
+          break
+      else:
+        new_df[col_name] = col_data
+  
+  return new_df
+      
+
+
+def get_mode_of_a_column(df, name):
   res = {}
-  n, m = get_shape(df)
-  for j in range(0, n):
-    value = df.iloc[j][i]
-    if isNaN(value):
-      continue 
+
+  for value in df[name]:
+    if value == '':
+      continue
 
     if value in res:
       res[value] += 1
@@ -54,9 +142,68 @@ def get_mode_of_a_column(df, i):
       max_frequency = value   
       max_value = key
     
-  # return [key for key, value in res.items() if value == max_frequency]
   return max_value
+
+def get_mean_of_a_column(df, name):
+  sum = 0
+  n = 0
+  for value in df[name]:
+    if not value is None:
+      sum += value
+      n += 1
+
+  return sum / n
+
+def get_median_of_a_column(df, name):
+  n, m = get_shape(df)
+
+  arr = [value for value in df[name] if not value is None] # remove NaN values
+
+  arr = sort(arr)
+
+  median_pos = int(len(arr) / 2)
+
+  if len(arr) % 2 == 0:
+    return (arr[median_pos] + arr[median_pos - 1]) / 2.0
   
+  return arr[median_pos]
+
+def sort(arr): 
+  for i in range(0, len(arr) - 1):
+    for j in range(i + 1, len(arr)):
+      if arr[i] > arr[j]:
+        t = arr[i]
+        arr[i] = arr[j]
+        arr[j] = t
+  return arr
+
+def extract_columns_with_missing_value(df):
+
+  missing_columns = [] # name of each columns which has missing value
+
+  for col_name, col_data in df.items():
+    if None in col_data or '' in col_data:
+      missing_columns.append(col_name)
+      continue
+
+  return missing_columns
+
+
+# ------------------------------------------- All the functions below are for TESTING PURPOSE -------------------------------------------------------------
+
+# check if a column has no value in it
+def column_with_no_value(df, i):
+  n, m = get_shape(df)
+
+  for j in range(0, n):
+    if not isNaN(df.iloc[j][i]):
+      return False
+  
+  return True
+
+
+def get_column_type(df, i):
+  return df.iloc[:,i].dtype
 
 def missing_value(df, i):
   """
@@ -69,61 +216,6 @@ def missing_value(df, i):
     if isNaN(df.iloc[n][i]):
       return True
   return False
-
-def get_mean_of_a_column(df, i):
-  n, m = get_shape(df)
-
-  sum = 0
-
-  elements = 0
-
-  for j in range(0, n):
-    if isNaN(df.iloc[j][i]):
-      continue
-    
-    sum += df.iloc[j][i]
-    elements += 1
-
-  return sum / elements
-
-def get_median_of_a_column(df, i):
-  n, m = get_shape(df)
-
-  # print(df.iloc[:, i].tolist())
-  arr = df.iloc[:, i].tolist()
-
-  arr = [i for i in arr if not isNaN(i)] # remove NaN values
-
-  arr = sort(arr)
-
-  median_pos = int(len(arr) / 2)
-
-  # print(sorted_arr[median_pos], sorted_arr[median_pos-1])
-  if n % 2 == 0:
-    return (arr[median_pos] + arr[median_pos - 1]) / 2
-  
-  return arr[median_pos]
-
-# check if a column has no value in it
-def column_with_no_value(df, i):
-  n, m = get_shape(df)
-
-  for j in range(0, n):
-    if not isNaN(df.iloc[j][i]):
-      return False
-  
-  return True
-
-def sort(arr): 
-  for i in range(0, len(arr) - 1):
-    for j in range(i + 1, len(arr)):
-      if arr[i] > arr[j]:
-        t = arr[i]
-        arr[i] = arr[j]
-        arr[j] = t
-  return arr
-
-# All the functions below are for TESTING PURPOSE
 
 def print_numerical_columns(df):
   res = df.select_dtypes(include=NUMERICS).columns
@@ -177,4 +269,4 @@ def fillna(df, method, output_file):
       else:
         df[name].fillna(df[name].median(), inplace=True)
 
-  df.to_csv(output_file)
+  df.to_csv(output_file, index=False)

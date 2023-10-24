@@ -1,18 +1,9 @@
-#! python3
-import sys
-import pandas as pd
-
-def get_data(url):
-  df = pd.read_csv(url)
-  return df
-
-def isNaN(value):
-  return value != value
+from utils import *
 
 def extract_columns_with_missing_value(df):
-  n, m = df.shape # n: number of rows, m: number of columns
+  n, m = get_shape(df) # n: number of rows, m: number of columns
 
-  column_names = df.columns.tolist()
+  column_names = get_column_names(df)
 
   missing_columns = [] # name of each columns which has missing value
 

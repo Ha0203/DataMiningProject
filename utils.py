@@ -242,6 +242,75 @@ def impute(df, column_names, method):
 
   return df
 
+def get_variance(df, col_name):
+  mean = get_mean_of_a_column(df, col_name)
+  
+  return sum([(value - mean) ** 2 for value in df[col_name]]) / len(df[col_name])
+
+def get_standard_deviation(df, col_name):
+  variance = get_variance(df, col_name)
+  return variance ** 0.5
+
+def column_value_all_zeroes(col_data):
+  for value in col_data:
+    if value != 0:
+      return False
+
+  return True
+
+def normalize(df, method, col_names):
+  # Before imputing, we need to remove the columns which has too many missing values
+  del_cols, deleted_df = delete_cols(df, col_names)
+
+  cols_remain = [name for name in col_names if name not in del_cols]
+
+  # before normalizing, we need to impute the value first
+
+  imputed_df = impute(deleted_df, cols_remain, 'mean')
+  
+  for col_name in cols_remain:
+    col_data = imputed_df[col_name]
+    
+    if column_value_all_zeroes(col_data):
+      continue
+
+    if type(col_data[0]) != str:
+      new_col = []
+      if method == 'min-max':
+        max_value = max(col_data)
+        min_value = min(col_data)
+        for value in col_data:
+          new_col.append((value - min_value) / (max_value - min_value))
+      else:
+        for value in col_data:
+          new_col.append(float(value - get_mean_of_a_column(imputed_df, col_name)) / get_standard_deviation(imputed_df, col_name))
+      df[col_name] = new_col
+    else:
+      df[col_name] = col_data
+  
+  return df
+
+def set_up_cmd():
+  argParser = argparse.ArgumentParser(description="Normalizing Numerical Attribute Processing")
+
+  argParser.add_argument('in', help='Input file name')
+  argParser.add_argument('-columns', '--columns', help='columns you want to normalize, leave it empty to normalize ALL the columns', default=[], nargs='*')
+  argParser.add_argument('-out', '--out', help='Output file name')
+  argParser.add_argument('-method', '--method', help='method(min-max or z-score)')
+
+  args = argParser.parse_args()
+
+  input_file = sys.argv[1]
+  output_file = args.out
+  method = args.method
+  columns = []
+
+  if args.columns == []:
+    columns = get_column_names(df)
+  else:
+    columns = args.columns
+
+  return input_file, output_file, method, columns
 
 # ------------------------------------------- All the functions below are for TESTING PURPOSE -------------------------------------------------------------
 
@@ -324,3 +393,31 @@ def fillna(df, method, output_file):
         df[name].fillna(df[name].median(), inplace=True)
 
   df.to_csv(output_file, index=False)
+
+def normalize_pandas_min_max(input_file, output_file):
+  df = pd.read_csv(input_file)
+
+  # copy the data 
+  df_max_scaled = df.copy() 
+
+  # apply normalization techniques 
+  for column in df_max_scaled.columns: 
+    if df_max_scaled[column].dtype != object:
+      df_max_scaled[column] = df_max_scaled[column] / df_max_scaled[column].abs().max() 
+	
+  df_max_scaled.to_csv(output_file, index=False) 
+
+
+def normalize_pandas_z_score(df, output_file):
+  df = pd.DataFrame.from_dict(df)
+
+  # copy the data 
+  df_z_scaled = df.copy() 
+    
+  # apply normalization techniques 
+  for column in df_z_scaled.columns: 
+    if df_z_scaled[column].dtype != object:
+      df_z_scaled[column] = (df_z_scaled[column] -
+                            df_z_scaled[column].mean()) / df_z_scaled[column].std()     
+    
+  df_z_scaled.to_csv(output_file, index=False) 

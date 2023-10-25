@@ -188,6 +188,60 @@ def extract_columns_with_missing_value(df):
 
   return missing_columns
 
+def get_number_of_missing_values(col_data):
+  sum = 0
+  for value in col_data:
+    if value is None or value == '':
+      sum += 1
+  return sum
+
+def delete_cols(df, columns):
+  """
+  Delete column which has the total of missing value greater than half of the total rows in dataset
+  return: a list of name of delete cols, and a dataset after deleting some columns
+  """
+  del_cols = []
+  new_df = df.copy()
+
+  for col_name in columns:
+    col_data = df[col_name]
+    num_missing_value = get_number_of_missing_values(col_data)
+
+    if num_missing_value > len(col_data) / 2:
+      del new_df[col_name]
+      del_cols.append(col_name)
+  
+  return del_cols, new_df
+
+def impute(df, column_names, method):
+  missing_col_names = extract_columns_with_missing_value(df) 
+
+  for name in column_names:
+    new_cols = []
+    impute_value = 0
+
+    if column_with_all_missing_values(df, name):
+      df[name] = [''] * len(df[name]) 
+      continue
+    
+    if not type(df[name][0]) == str:
+      if method == 'mean':
+        impute_value = get_mean_of_a_column(df, name)
+      else:
+        impute_value = get_median_of_a_column(df, name) 
+   
+    else:
+      impute_value = get_mode_of_a_column(df, name)
+
+    for value in df[name]:
+      if value is None or value == '':
+        value = impute_value
+      new_cols.append(value)
+
+    df[name] = new_cols
+
+  return df
+
 
 # ------------------------------------------- All the functions below are for TESTING PURPOSE -------------------------------------------------------------
 

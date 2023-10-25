@@ -11,7 +11,7 @@ args = argParser.parse_args()
 input_file = sys.argv[1]
 output_file = args.out
 
-df = get_data('house-prices.csv')
+df = get_data(input_file)
 
 df = convert_column_types(df)
 

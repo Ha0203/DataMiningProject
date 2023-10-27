@@ -2,7 +2,7 @@ from utils import *
 
 argParser = argparse.ArgumentParser(description='Delete Rows Processing')
 argParser.add_argument('in', help='input file name')
-argParser.add_argument('-p', '--percent', type = float, help='the proportion of missing attribute to all the attributes')
+argParser.add_argument('-p', '--percent', type = float, help='the proportion of missing attribute to all the attributes', default=0, nargs='*')
 argParser.add_argument('-out', '--out', help='output file name')
 
 args = argParser.parse_args()

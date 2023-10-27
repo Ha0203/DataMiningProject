@@ -23,6 +23,8 @@ df = get_data(input_file)
 
 df = convert_column_types(df)
 
+df = impute(df, [args.att1, args.att2], 'mean')
+
 new_att = args.att1 + ' ' + args.calculation + ' ' + args.att2
 
 df[new_att] = []

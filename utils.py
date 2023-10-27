@@ -290,27 +290,41 @@ def normalize(df, method, col_names):
   
   return df
 
-def set_up_cmd():
+def set_up_cmd(output_file = True, method=True):
   argParser = argparse.ArgumentParser(description="Normalizing Numerical Attribute Processing")
 
   argParser.add_argument('in', help='Input file name')
+
   argParser.add_argument('-columns', '--columns', help='columns you want to normalize, leave it empty to normalize ALL the columns', default=[], nargs='*')
-  argParser.add_argument('-out', '--out', help='Output file name')
-  argParser.add_argument('-method', '--method', help='method(min-max or z-score)')
+  
+  if output_file:
+    argParser.add_argument('-out', '--out', help='Output file name')
+  
+  if method:
+    argParser.add_argument('-method', '--method', help='method(min-max or z-score)')
 
   args = argParser.parse_args()
 
   input_file = sys.argv[1]
-  output_file = args.out
-  method = args.method
+  
+  if output_file: 
+    output_file = args.out
+  
+  if method:
+    method = args.method
+  
   columns = []
+
+  df = get_data(input_file)
+
+  df = convert_column_types(df)
 
   if args.columns == []:
     columns = get_column_names(df)
   else:
     columns = args.columns
 
-  return input_file, output_file, method, columns
+  return df, output_file, method, columns
 
 # ------------------------------------------- All the functions below are for TESTING PURPOSE -------------------------------------------------------------
 

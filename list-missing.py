@@ -1,10 +1,6 @@
 from utils import *
 
-data_file_name = sys.argv[1]
-
-df = get_data(data_file_name) 
-
-df = convert_column_types(df)
+df, _, _, columns = set_up_cmd(output_file=False, method=False)
 
 res = extract_columns_with_missing_value(df)
 

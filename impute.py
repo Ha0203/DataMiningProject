@@ -1,6 +1,6 @@
 from utils import *
 
-df, output_file, method, columns = set_up_cmd()
+df, output_file, method, columns, _ = set_up_cmd()
 
 new_df = impute(df, columns, method)
 

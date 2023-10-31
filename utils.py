@@ -193,7 +193,7 @@ def get_number_of_missing_values(col_data):
       sum += 1
   return sum
 
-def delete_cols(df, columns):
+def delete_cols(df, columns, percent):
   """
   Delete column which has the total of missing value greater than half of the total rows in dataset
   return: a list of name of delete cols, and a dataset after deleting some columns
@@ -205,7 +205,7 @@ def delete_cols(df, columns):
     col_data = df[col_name]
     num_missing_value = get_number_of_missing_values(col_data)
 
-    if num_missing_value > len(col_data) / 2:
+    if num_missing_value > len(col_data) * percent / 100:
       del new_df[col_name]
       del_cols.append(col_name)
   
@@ -258,7 +258,7 @@ def column_value_all_zeroes(col_data):
 
 def normalize(df, method, col_names):
   # Before imputing, we need to remove the columns which has too many missing values
-  del_cols, deleted_df = delete_cols(df, col_names)
+  del_cols, deleted_df = delete_cols(df, col_names, 50)
 
   cols_remain = [name for name in col_names if name not in del_cols]
 
@@ -288,7 +288,7 @@ def normalize(df, method, col_names):
   
   return df
 
-def set_up_cmd(output_file = True, method=True):
+def set_up_cmd(output_file = True, method=True, percent=False):
   argParser = argparse.ArgumentParser(description="Normalizing Numerical Attribute Processing")
 
   argParser.add_argument('in', help='Input file name')
@@ -301,6 +301,9 @@ def set_up_cmd(output_file = True, method=True):
   if method:
     argParser.add_argument('-method', '--method', help='method(min-max or z-score)')
 
+  if percent:
+    argParser.add_argument('-p', '--percent', help='Percent')
+
   args = argParser.parse_args()
 
   input_file = sys.argv[1]
@@ -310,6 +313,9 @@ def set_up_cmd(output_file = True, method=True):
   
   if method:
     method = args.method
+
+  if percent:
+    percent = int(args.percent)
   
   columns = []
 
@@ -322,5 +328,5 @@ def set_up_cmd(output_file = True, method=True):
   else:
     columns = args.columns
 
-  return df, output_file, method, columns
+  return df, output_file, method, columns, percent
 
